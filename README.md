@@ -19,25 +19,14 @@ instead of the backend. `VITE_API_URL` overrides the API origin for production
 builds (in dev, Vite proxies `/api` to `http://localhost:8080`).
 
 ### Docker
+A single root `Dockerfile` builds both the frontend and Go backend into a unified container image. The Go server directly serves both the API endpoints (`/api/*`) and the frontend single-page application with static asset routing and SPA fallback.
 
-`Dockerfile` builds the app with Node 22 and serves `dist/` from nginx. nginx
-handles the SPA fallback for react-router and forwards `/api/*` to the Go API,
-so the browser stays same-origin and no CORS setup is needed.
-
+To build and run the full stack:
 ```bash
-docker build -t salesarena-web .
-docker run --rm -p 80:80 -e API_UPSTREAM=http://host.docker.internal:8080 salesarena-web
-# http://localhost
+# from repository root
+docker compose up -d --build
+# http://localhost:8080
 ```
-
-| Setting | When | Default | Notes |
-|---|---|---|---|
-| `API_UPSTREAM` | run time (`-e`) | `http://api:8080` | Where nginx proxies `/api/*`. Scheme + host + port, no trailing slash. Must resolve when the container starts. |
-| `VITE_API_URL` | build time (`--build-arg`) | empty | Leave empty to use the nginx proxy. Set a full origin only if the browser should call the API directly. |
-| `VITE_USE_MOCK` | build time (`--build-arg`) | `false` | `true` bakes in the in-browser mock; the image then needs no backend. |
-
-Local `.env` files are excluded from the build context (see `.dockerignore`),
-so only `--build-arg` values reach the bundle.
 
 ### Demo accounts
 
