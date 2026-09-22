@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { api } from '../services/api';
 
 const AuthContext = createContext(null);
@@ -37,20 +37,6 @@ export function AuthProvider({ children }) {
       /* ignore */
     }
     api.logout();
-  }, []);
-
-  // The HTTP client fires this when the backend rejects the session token.
-  useEffect(() => {
-    const onUnauthorized = () => {
-      setUser(null);
-      try {
-        localStorage.removeItem(SESSION_KEY);
-      } catch {
-        /* ignore */
-      }
-    };
-    window.addEventListener('srr:unauthorized', onUnauthorized);
-    return () => window.removeEventListener('srr:unauthorized', onUnauthorized);
   }, []);
 
   /** Returns the pending login reward once, then clears it. */

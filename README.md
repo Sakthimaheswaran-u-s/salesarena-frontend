@@ -5,39 +5,29 @@ portal points for logins, streaks and won leads, lose points for dropped leads,
 and compete on a live leaderboard. BDMs (managers) get a team dashboard, a
 searchable leaderboard and per-day reports.
 
+The app is fully self-contained — there is no server. All data comes from an
+in-browser sample API (`src/services/mockApi.js`) that generates a deterministic
+16-month history and persists your own logins and any accounts you create in
+`localStorage`.
+
 ## Run it
 
 ```bash
-cd frontend
 npm install
-npm run dev        # http://localhost:5173  (expects the Go API on :8080, see ../backend)
+npm run dev        # http://localhost:5173
 npm run build      # production build in dist/
 ```
 
-Set `VITE_USE_MOCK=true` in `frontend/.env` to run against the in-browser mock
-instead of the backend. `VITE_API_URL` overrides the API origin for production
-builds (in dev, Vite proxies `/api` to `http://localhost:8080`).
-
 ### Docker
 
-`Dockerfile` builds the app with Node 22 and serves `dist/` from nginx. nginx
-handles the SPA fallback for react-router and forwards `/api/*` to the Go API,
-so the browser stays same-origin and no CORS setup is needed.
+`Dockerfile` builds the app with Node 22 and serves `dist/` from nginx, with the
+SPA fallback for react-router and long-lived caching for hashed assets.
 
 ```bash
 docker build -t salesarena-web .
-docker run --rm -p 80:80 -e API_UPSTREAM=http://host.docker.internal:8080 salesarena-web
+docker run --rm -p 80:80 salesarena-web
 # http://localhost
 ```
-
-| Setting | When | Default | Notes |
-|---|---|---|---|
-| `API_UPSTREAM` | run time (`-e`) | `http://api:8080` | Where nginx proxies `/api/*`. Scheme + host + port, no trailing slash. Must resolve when the container starts. |
-| `VITE_API_URL` | build time (`--build-arg`) | empty | Leave empty to use the nginx proxy. Set a full origin only if the browser should call the API directly. |
-| `VITE_USE_MOCK` | build time (`--build-arg`) | `false` | `true` bakes in the in-browser mock; the image then needs no backend. |
-
-Local `.env` files are excluded from the build context (see `.dockerignore`),
-so only `--build-arg` values reach the bundle.
 
 ### Demo accounts
 
@@ -49,12 +39,12 @@ so only `--build-arg` values reach the bundle.
 The login page has one-click buttons that fill these in. "Reset demo data" clears
 persisted login streaks and any accounts added through the Associates screen.
 
-In mock mode the sample history covers the last 16 months, so the notice board
-opens with several closed quarters on it.
+The sample history covers the last 16 months, so the notice board opens with
+several closed quarters on it.
 
 ## Scoring rules
 
-Defined once in `src/config/rules.js` — mirror these in the Go backend.
+Defined once in `src/config/rules.js`.
 
 | Event | Points |
 |-------|--------|
@@ -106,11 +96,10 @@ Responsive: sidebar on desktop, bottom tab bar on tablet/mobile.
 
 ```
 src/
-  config/rules.js        scoring constants + streak formula (shared contract with backend)
+  config/rules.js        scoring constants + streak formula
   data/mockData.js       demo users, teams, company names
-  services/api.js        picks httpApi (Go backend) or mockApi (VITE_USE_MOCK=true)
-  services/httpApi.js    fetch client for the Go API (bearer token, 401 handling)
-  services/mockApi.js    in-browser mock with the same surface
+  services/api.js        re-exports the sample API as `api`
+  services/mockApi.js    in-browser sample API (deterministic history + localStorage overlay)
   hooks/useApi.js        async loader that keeps stale data on screen while refetching
   context/               AuthContext (session), ThemeContext (light/dark)
   components/ui          Card, StatTile, chips, Avatar, RankBadge, Segmented, SearchInput…
@@ -124,21 +113,24 @@ src/
   styles/global.css      design tokens (light + dark), layout, components
 ```
 
-## Backend contract
+## Sample API
 
-`src/services/httpApi.js` maps each call to the Go API (`../backend`); `mockApi.js`
-is the standalone in-browser implementation with identical return shapes.
+Every screen goes through `api` from `src/services/api.js`, which is the
+in-browser implementation in `mockApi.js`. All methods are async and resolve
+after a short simulated delay.
 
-| Function | Endpoint |
-|----------|----------|
-| `login({ email, password, role })` | `POST /api/auth/login` → `{ user, reward }` |
-| `getBdaOverview(bdaId, range)` | `GET /api/bda/:id/overview?range=` |
-| `getBdaActivity(bdaId)` | `GET /api/bda/:id/activity` |
-| `getLeaderboard({ range, search, team })` | `GET /api/leaderboard?range=&q=&team=` |
-| `getTeamOverview(range)` | `GET /api/team/overview?range=` |
-| `getDailyReport(date)` | `GET /api/team/daily?date=YYYY-MM-DD` |
-| `getNoticeBoard()` | `GET /api/notice-board` |
-| `listBdas()` | `GET /api/bdas` (manager only) |
-| `createBda({name, email, password})` | `POST /api/bdas` (manager only) |
+| Function | Returns |
+|----------|---------|
+| `login({ email, password, role })` | `{ user, reward }` — BDAs also earn the day's login points |
+| `logout()` | — |
+| `getBdaOverview(bdaId, range)` | dashboard data for one associate |
+| `getBdaActivity(bdaId)` | full points ledger for one associate |
+| `getLeaderboard({ range, search })` | ranked associates, optionally filtered by search text |
+| `getTeamOverview(range)` | manager dashboard data across all associates |
+| `getDailyReport(date)` | per-associate report for one `YYYY-MM-DD` |
+| `getNoticeBoard()` | top 3 of every closed 3-month cycle |
+| `listBdas()` | roster for the manager's admin screen |
+| `createBda({ name, email, password })` | create an associate account (persisted in `localStorage`) |
+| `resetDemo()` | wipe persisted logins and added accounts |
 
 `range` is one of `today | week | month | all`.
