@@ -1,11 +1,8 @@
 /**
  * API entry point. Every screen imports `api` from here.
  *
- * - Default: the Go backend (backend/) via ./httpApi.js
- * - VITE_USE_MOCK=true: the in-browser mock via ./mockApi.js (no backend needed)
+ * The app is fully self-contained: all data comes from the in-browser sample
+ * API in ./mockApi.js (deterministic history + localStorage for logins and
+ * accounts created through the UI).
  */
-import { httpApi } from './httpApi';
-import { mockApi } from './mockApi';
-
-export const USING_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
-export const api = USING_MOCK ? mockApi : httpApi;
+export { mockApi as api } from './mockApi';
