@@ -1,5 +1,8 @@
 /**
- * In-browser sample API. The app has no server; everything is computed here.
+ * In-browser mock of the API (no backend needed).
+ *
+ * Selected when VITE_USE_MOCK=true; see ./api.js. Return shapes are identical
+ * to the Go backend's responses.
  *
  * History for the seeded roster is generated deterministically (seeded per
  * associate) so rankings are stable across reloads. Two things are layered on
@@ -336,10 +339,10 @@ function recordLogin(bdaId) {
 }
 
 // ---------------------------------------------------------------------------
-// Public API
+// Public API — same surface as ./httpApi.js
 // ---------------------------------------------------------------------------
 export const mockApi = {
-  /** Sign in; BDAs also earn the day's login points. */
+  /** POST /api/auth/login */
   async login({ email, password, role }) {
     await sleep(420);
     const user = allUsers().find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
@@ -353,7 +356,7 @@ export const mockApi = {
 
   async logout() {},
 
-  /** Dashboard data for one associate. */
+  /** GET /api/bda/:id/overview?range= */
   async getBdaOverview(bdaId, range = 'month') {
     await sleep();
     const { dates, bdas } = dataset();
@@ -398,7 +401,7 @@ export const mockApi = {
     };
   },
 
-  /** Full points ledger for one associate. */
+  /** GET /api/bda/:id/activity */
   async getBdaActivity(bdaId) {
     await sleep();
     const { bdas } = dataset();
@@ -411,7 +414,7 @@ export const mockApi = {
     return { bda: toEntry(me), days, daily30: me.days.slice(-30).map(({ events, ...d }) => d) };
   },
 
-  /** Ranked associates, optionally filtered by search text. */
+  /** GET /api/leaderboard?range=&q= */
   async getLeaderboard({ range = 'month', search = '' } = {}) {
     await sleep();
     const { dates, bdas } = dataset();
@@ -427,7 +430,7 @@ export const mockApi = {
     return { range, total: current.length, entries };
   },
 
-  /** Manager dashboard data across all associates. */
+  /** GET /api/team/overview?range= */
   async getTeamOverview(range = 'month') {
     await sleep();
     const { dates, bdas } = dataset();
@@ -459,7 +462,7 @@ export const mockApi = {
     return { range, today, yesterday, daily, period, top: board.slice(0, 5), watchlist, quarter, totalBdas: bdas.length };
   },
 
-  /** Per-associate report for a single day. */
+  /** GET /api/team/daily?date= */
   async getDailyReport(dateKey) {
     await sleep();
     const { dates, bdas } = dataset();
@@ -473,7 +476,7 @@ export const mockApi = {
     return { date: dateKey, rows, totals: sumDay(bdas, dateKey), available: true, minDate: dates[0] };
   },
 
-  /** Top 3 of every closed 3-month cycle, newest first. */
+  /** GET /api/notice-board — top 3 of every closed 3-month cycle, newest first. */
   async getNoticeBoard() {
     await sleep();
     const { dates, bdas } = dataset();
@@ -536,7 +539,7 @@ export const mockApi = {
     return { years, current: cycles.find((c) => c.status === 'running') || null };
   },
 
-  /** Roster for the manager's admin screen. */
+  /** GET /api/bdas — roster for the manager's admin screen. */
   async listBdas() {
     await sleep();
     const { dates, bdas } = dataset();
@@ -562,7 +565,7 @@ export const mockApi = {
     };
   },
 
-  /** Create an associate account. */
+  /** POST /api/bdas — create an associate account. */
   async createBda({ name, email, password }) {
     await sleep(380);
     const cleanName = (name || '').trim();

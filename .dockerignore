@@ -6,5 +6,6 @@ Dockerfile
 README.md
 node_modules
 dist
+# Vite reads .env files at build time; never bake a local one into the image.
 .env
 .env.*

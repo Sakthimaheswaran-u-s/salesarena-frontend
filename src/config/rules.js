@@ -1,4 +1,4 @@
-// Single source of truth for scoring.
+// Single source of truth for scoring. The Go backend must mirror these values.
 export const RULES = {
   LEAD_WON: 50,            // portal points for each successful lead
   LEAD_DROPPED: -50,       // portal points for each dropped lead

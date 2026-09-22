@@ -4,7 +4,7 @@ import { AlertCircle, BarChart3, Briefcase, Flame, Headset, Loader2, Pin, Timer,
 import { useAuth } from '../context/AuthContext';
 import { Brand } from '../components/layout/AppShell';
 import { RULES } from '../config/rules';
-import { api } from '../services/api';
+import { api, USING_MOCK } from '../services/api';
 import { daysLeftInQuarter, quarterOf, todayKey } from '../utils/format';
 
 const DEMO = {
@@ -180,7 +180,7 @@ export default function LoginPage() {
               </div>
             ))}
             <span className="muted" style={{ fontSize: 11.5, marginTop: 2 }}>
-              Running on sample data
+              {USING_MOCK ? 'Running on sample data' : 'Connected to the API'}
             </span>
           </div>
         </form>
