@@ -1,0 +1,11 @@
+# Keep the build context to sources + package manifests only.
+.git
+.gitignore
+.dockerignore
+Dockerfile
+README.md
+node_modules
+dist
+# Vite reads .env files at build time; never bake a local one into the image.
+.env
+.env.*
